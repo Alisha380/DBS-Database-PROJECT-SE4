@@ -1,0 +1,564 @@
+-- Create database
+CREATE DATABASE EventManagement;
+USE EventManagement;
+
+-- Table: EventCreator
+CREATE TABLE EventCreator (
+    EventCreatorID INT PRIMARY KEY AUTO_INCREMENT,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Email VARCHAR(100) UNIQUE,
+    Phone VARCHAR(20),
+    Password VARCHAR(255)
+);
+
+-- Table: EventType
+CREATE TABLE EventType (
+    EventTypeID INT PRIMARY KEY AUTO_INCREMENT,
+    EventTypeName VARCHAR(100)
+);
+
+-- Table: Event
+CREATE TABLE Event (
+    EventID INT PRIMARY KEY AUTO_INCREMENT,
+    EventCreatorID INT,
+    EventName VARCHAR(100),
+    EventDescription TEXT,
+    EventDate DATE,
+    EventTime TIME,
+    EventLocation VARCHAR(100),
+    EventType INT,
+    FOREIGN KEY (EventCreatorID) REFERENCES EventCreator(EventCreatorID),
+    FOREIGN KEY (EventType) REFERENCES EventType(EventTypeID)
+);
+
+-- Table: Attendee
+CREATE TABLE Attendee (
+    AttendeeID INT PRIMARY KEY AUTO_INCREMENT,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    Email VARCHAR(100),
+    Phone VARCHAR(20)
+);
+
+-- Table: Registration
+CREATE TABLE Registration (
+    RegistrationID INT PRIMARY KEY AUTO_INCREMENT,
+    EventID INT,
+    AttendeeID INT,
+    RegistrationDate DATE,
+    RegistrationStatus VARCHAR(50),
+    FOREIGN KEY (EventID) REFERENCES Event(EventID),
+    FOREIGN KEY (AttendeeID) REFERENCES Attendee(AttendeeID)
+);
+
+-- Table: Payment
+CREATE TABLE Payment (
+    PaymentID INT PRIMARY KEY AUTO_INCREMENT,
+    RegistrationID INT,
+    PaymentDate DATE,
+    PaymentAmount DECIMAL(10,2),
+    PaymentMethod VARCHAR(50),
+    FOREIGN KEY (RegistrationID) REFERENCES Registration(RegistrationID)
+);
+
+-- Table: Ticket
+CREATE TABLE Ticket (
+    TicketID INT PRIMARY KEY AUTO_INCREMENT,
+    EventID INT,
+    TicketType VARCHAR(50),
+    TicketPrice DECIMAL(10,2),
+    TicketQuantity INT,
+    FOREIGN KEY (EventID) REFERENCES Event(EventID)
+);
+
+-- Table: Venue
+CREATE TABLE Venue (
+    VenueID INT PRIMARY KEY AUTO_INCREMENT,
+    VenueName VARCHAR(100),
+    VenueLocation VARCHAR(100),
+    VenueCapacity INT
+);
+
+-- Table: EventVenue
+CREATE TABLE EventVenue (
+    EventVenueID INT PRIMARY KEY AUTO_INCREMENT,
+    EventID INT,
+    VenueID INT,
+    FOREIGN KEY (EventID) REFERENCES Event(EventID),
+    FOREIGN KEY (VenueID) REFERENCES Venue(VenueID)
+);
+-- 3. Trigger: Update Ticket Quantity after Registration
+DELIMITER //
+
+CREATE TRIGGER UpdateTicketAfterRegistration
+AFTER INSERT ON Registration
+FOR EACH ROW
+BEGIN
+    UPDATE Ticket
+    SET TicketQuantity = TicketQuantity - 1
+    WHERE EventID = NEW.EventID
+    AND TicketQuantity > 0;
+END;
+//
+
+DELIMITER ;
+
+-- 4. View: High Attendance Events
+CREATE VIEW HighAttendanceEvents AS
+SELECT E.EventName, E.EventDate, COUNT(R.RegistrationID) AS TotalRegistrations
+FROM Event E
+JOIN Registration R ON E.EventID = R.EventID
+GROUP BY E.EventID
+HAVING TotalRegistrations > 50;
+
+-- =========================================
+-- EventCreator - 20 entries
+-- =========================================
+INSERT INTO EventCreator (FirstName, LastName, Email, Phone, Password) VALUES
+('Ali','Khan','ali1@example.com','03001000001','pass123'),
+('Sara','Malik','sara1@example.com','03001000002','pass123'),
+('Ahmed','Raza','ahmed1@example.com','03001000003','pass123'),
+('Fatima','Noor','fatima1@example.com','03001000004','pass123'),
+('Hassan','Ali','hassan1@example.com','03001000005','pass123'),
+('Ayesha','Baloch','ayesha1@example.com','03001000006','pass123'),
+('Usman','Shah','usman1@example.com','03001000007','pass123'),
+('Zoya','Malik','zoya1@example.com','03001000008','pass123'),
+('Fahad','Iqbal','fahad1@example.com','03001000009','pass123'),
+('Noor','Fatima','noor1@example.com','03001000010','pass123'),
+('Kamran','Akbar','kamran1@example.com','03001000011','pass123'),
+('Rabia','Shaikh','rabia1@example.com','03001000012','pass123'),
+('Imran','Khan','imran1@example.com','03001000013','pass123'),
+('Sana','Malik','sana1@example.com','03001000014','pass123'),
+('Bilal','Hussain','bilal1@example.com','03001000015','pass123'),
+('Hina','Raza','hina1@example.com','03001000016','pass123'),
+('Tariq','Ahmed','tariq1@example.com','03001000017','pass123'),
+('Maryam','Ali','maryam1@example.com','03001000018','pass123'),
+('Shahbaz','Khan','shahbaz1@example.com','03001000019','pass123'),
+('Areeba','Noor','areeba1@example.com','03001000020','pass123');
+
+-- =========================================
+-- EventType - 20 entries
+-- =========================================
+INSERT INTO EventType (EventTypeName) VALUES
+('Conference'),('Wedding'),('Concert'),('Seminar'),('Workshop'),
+('Webinar'),('Exhibition'),('Party'),('Festival'),('Meetup'),
+('Competition'),('Training'),('Charity Event'),('Product Launch'),('Award Ceremony'),
+('Networking Event'),('Hackathon'),('Sports Event'),('Cultural Event'),('Art Show');
+
+-- =========================================
+-- Venue - 20 entries
+-- =========================================
+INSERT INTO Venue (VenueName, VenueLocation, VenueCapacity) VALUES
+('Lahore Expo Center','Lahore',500),
+('Karachi Banquet Hall','Karachi',300),
+('Islamabad Convention Center','Islamabad',400),
+('Multan Grand Hall','Multan',250),
+('Peshawar Arena','Peshawar',350),
+('Faisalabad Hall','Faisalabad',200),
+('Quetta Auditorium','Quetta',150),
+('Hyderabad Banquet','Hyderabad',180),
+('Sialkot Stadium','Sialkot',400),
+('Rawalpindi Arena','Rawalpindi',300),
+('Bahawalpur Hall','Bahawalpur',220),
+('Gujranwala Expo','Gujranwala',350),
+('Sukkur Hall','Sukkur',180),
+('Mirpur Banquet','Mirpur',200),
+('Muzaffargarh Center','Muzaffargarh',250),
+('Abbottabad Hall','Abbottabad',150),
+('Dera Ismail Khan Arena','DI Khan',300),
+('Chitral Auditorium','Chitral',100),
+('Mardan Hall','Mardan',200),
+('Nowshera Arena','Nowshera',150);
+
+-- =========================================
+-- Event - 20 entries
+-- =========================================
+INSERT INTO Event (EventCreatorID, EventName, EventDescription, EventDate, EventTime, EventLocation, EventType) VALUES
+(1,'Tech Conference 2026','Annual tech conference','2026-03-15','10:00:00','Lahore Expo Center',1),
+(2,'Sara & Ali Wedding','Wedding Ceremony','2026-05-20','18:00:00','Karachi Banquet Hall',2),
+(3,'Music Concert','Live music event','2026-06-10','20:00:00','Islamabad Convention Center',3),
+(4,'Startup Seminar','Business and tech seminar','2026-04-25','14:00:00','Multan Grand Hall',4),
+(5,'Photography Workshop','Learn photography skills','2026-07-05','09:00:00','Peshawar Arena',5),
+(6,'Online Webinar','Educational online session','2026-02-20','15:00:00','Faisalabad Hall',6),
+(7,'Art Exhibition','Local artists display','2026-08-10','11:00:00','Quetta Auditorium',7),
+(8,'Birthday Party','Private celebration','2026-03-30','18:00:00','Hyderabad Banquet',8),
+(9,'Music Festival','Annual festival','2026-09-15','16:00:00','Sialkot Stadium',9),
+(10,'Tech Meetup','Startup meet','2026-10-05','17:00:00','Rawalpindi Arena',10),
+(11,'Coding Competition','Programming challenge','2026-11-10','10:00:00','Bahawalpur Hall',11),
+(12,'Employee Training','Corporate training','2026-01-25','09:00:00','Gujranwala Expo',12),
+(13,'Charity Event','Fundraising event','2026-04-10','12:00:00','Sukkur Hall',13),
+(14,'Product Launch','Tech product launch','2026-05-15','11:00:00','Mirpur Banquet',14),
+(15,'Award Ceremony','Recognition event','2026-06-20','19:00:00','Muzaffargarh Center',15),
+(16,'Networking Event','Professional networking','2026-07-25','15:00:00','Abbottabad Hall',16),
+(17,'Hackathon','24-hour coding','2026-08-30','08:00:00','Dera Ismail Khan Arena',17),
+(18,'Sports Event','Local sports event','2026-09-20','14:00:00','Chitral Auditorium',18),
+(19,'Cultural Event','Traditional performance','2026-10-10','18:00:00','Mardan Hall',19),
+(20,'Art Show','Contemporary art show','2026-11-05','10:00:00','Nowshera Arena',20);
+
+-- =========================================
+-- EventVenue - 20 entries
+-- =========================================
+INSERT INTO EventVenue (EventID, VenueID) VALUES
+(1,1),(2,2),(3,3),(4,4),(5,5),
+(6,6),(7,7),(8,8),(9,9),(10,10),
+(11,11),(12,12),(13,13),(14,14),(15,15),
+(16,16),(17,17),(18,18),(19,19),(20,20);
+
+-- =========================================
+-- Ticket - 20 entries
+-- =========================================
+INSERT INTO Ticket (EventID, TicketType, TicketPrice, TicketQuantity) VALUES
+(1,'Regular',50.00,200),
+(1,'VIP',150.00,50),
+(2,'Guest',0.00,100),
+(3,'Standard',80.00,300),
+(3,'Premium',200.00,50),
+(4,'Entry',20.00,150),
+(5,'Participant',100.00,40),
+(6,'Regular',30.00,120),
+(7,'VIP',100.00,50),
+(8,'Guest',0.00,80),
+(9,'Standard',75.00,200),
+(10,'Premium',180.00,60),
+(11,'Entry',25.00,100),
+(12,'Participant',90.00,40),
+(13,'Regular',40.00,80),
+(14,'VIP',150.00,50),
+(15,'Guest',0.00,60),
+(16,'Standard',85.00,70),
+(17,'Premium',200.00,30),
+(18,'Entry',15.00,90),
+(19,'Participant',100.00,50);
+
+-- =========================================
+-- Attendee - 20 entries
+-- =========================================
+INSERT INTO Attendee (FirstName, LastName, Email, Phone) VALUES
+('Ayesha','Khan','ayesha1@example.com','03101234501'),
+('Ahmed','Ali','ahmed1@example.com','03101234502'),
+('Sara','Bano','sara1@example.com','03101234503'),
+('Usman','Riaz','usman1@example.com','03101234504'),
+('Hina','Raza','hina1@example.com','03101234505'),
+('Bilal','Shah','bilal1@example.com','03101234506'),
+('Zoya','Malik','zoya1@example.com','03101234507'),
+('Fahad','Iqbal','fahad1@example.com','03101234508'),
+('Noor','Fatima','noor1@example.com','03101234509'),
+('Kamran','Akbar','kamran1@example.com','03101234510'),
+('Rabia','Shaikh','rabia1@example.com','03101234511'),
+('Imran','Khan','imran1@example.com','03101234512'),
+('Sana','Malik','sana1@example.com','03101234513'),
+('Bilal','Hussain','bilal1@example.com','03101234514'),
+('Hina','Raza','hina2@example.com','03101234515'),
+('Tariq','Ahmed','tariq1@example.com','03101234516'),
+('Maryam','Ali','maryam1@example.com','03101234517'),
+('Shahbaz','Khan','shahbaz1@example.com','03101234518'),
+('Areeba','Noor','areeba1@example.com','03101234519'),
+('Ali','Raza','ali2@example.com','03101234520');
+
+-- =========================================
+-- Registration - 20 entries
+-- =========================================
+INSERT INTO Registration (EventID, AttendeeID, RegistrationDate, RegistrationStatus) VALUES
+(1,1,CURDATE(),'Confirmed'),
+(1,2,CURDATE(),'Confirmed'),
+(2,3,CURDATE(),'Confirmed'),
+(2,4,CURDATE(),'Confirmed'),
+(3,5,CURDATE(),'Confirmed'),
+(3,6,CURDATE(),'Confirmed'),
+(4,7,CURDATE(),'Confirmed'),
+(4,8,CURDATE(),'Confirmed'),
+(5,9,CURDATE(),'Confirmed'),
+(5,10,CURDATE(),'Confirmed'),
+(6,11,CURDATE(),'Confirmed'),
+(6,12,CURDATE(),'Confirmed'),
+(7,13,CURDATE(),'Confirmed'),
+(7,14,CURDATE(),'Confirmed'),
+(8,15,CURDATE(),'Confirmed'),
+(8,16,CURDATE(),'Confirmed'),
+(9,17,CURDATE(),'Confirmed'),
+(9,18,CURDATE(),'Confirmed'),
+(10,19,CURDATE(),'Confirmed'),
+(10,20,CURDATE(),'Confirmed');
+
+-- =========================================
+-- Payment - 20 entries
+-- =========================================
+INSERT INTO Payment (RegistrationID, PaymentDate, PaymentAmount, PaymentMethod) VALUES
+(1,CURDATE(),50.00,'Card'),
+(2,CURDATE(),150.00,'Card'),
+(3,CURDATE(),0.00,'Free'),
+(4,CURDATE(),0.00,'Free'),
+(5,CURDATE(),80.00,'Card'),
+(6,CURDATE(),200.00,'Card'),
+(7,CURDATE(),20.00,'Cash'),
+(8,CURDATE(),100.00,'Card'),
+(9,CURDATE(),100.00,'Card'),
+(10,CURDATE(),30.00,'Cash'),
+(11,CURDATE(),25.00,'Card'),
+(12,CURDATE(),90.00,'Card'),
+(13,CURDATE(),40.00,'Card'),
+(14,CURDATE(),150.00,'Card'),
+(15,CURDATE(),0.00,'Free'),
+(16,CURDATE(),85.00,'Card'),
+(17,CURDATE(),200.00,'Card'),
+(18,CURDATE(),15.00,'Cash'),
+(19,CURDATE(),100.00,'Card'),
+(20,CURDATE(),100.00,'Card');
+
+
+-- 6. Sample Queries
+-- View all events with tickets
+SELECT E.EventName, T.TicketType, T.TicketQuantity
+FROM Event E
+JOIN Ticket T ON E.EventID = T.EventID;
+
+-- View attendees for an event
+SELECT A.FirstName, A.LastName, R.RegistrationStatus
+FROM Attendee A
+JOIN Registration R ON A.AttendeeID = R.AttendeeID
+WHERE R.EventID = 1;
+
+-- View payments
+SELECT P.PaymentID, A.FirstName, A.LastName, P.PaymentAmount, P.PaymentMethod
+FROM Payment P
+JOIN Registration R ON P.RegistrationID = R.RegistrationID
+JOIN Attendee A ON R.AttendeeID = A.AttendeeID;
+
+-- Check high attendance events
+SELECT * FROM HighAttendanceEvents;
+
+-- Remaining tickets for an event
+SELECT EventID, TicketType, TicketQuantity FROM Ticket;
+
+-- -----------------------------
+-- EVENT CREATOR CRUD
+-- -----------------------------
+
+-- CREATE (Add new event creator)
+INSERT INTO EventCreator (FirstName, LastName, Email, Phone, Password)
+VALUES ('Ali', 'Khan', 'ali@example.com', '03001234567', 'pass123');
+
+-- READ (View all event creators)
+SELECT * FROM EventCreator;
+
+-- UPDATE (Update event creator phone)
+UPDATE EventCreator
+SET Phone = '03009998877'
+WHERE EventCreatorID = 1;
+
+-- DELETE (Remove event creator)
+DELETE FROM EventCreator
+WHERE EventCreatorID = 11;
+
+-- -----------------------------
+-- EVENT TYPE CRUD
+-- -----------------------------
+
+-- CREATE (Add new event type)
+INSERT INTO EventType (EventTypeName)
+VALUES ('Seminar');
+
+-- READ (View all event types)
+SELECT * FROM EventType;
+
+-- UPDATE (Change event type name)
+UPDATE EventType
+SET EventTypeName = 'Workshop'
+WHERE EventTypeID = 1;
+
+-- DELETE (Remove event type)
+DELETE FROM EventType
+WHERE EventTypeID = 11;
+
+-- -----------------------------
+-- EVENT CRUD
+-- -----------------------------
+
+-- CREATE (Add new event)
+INSERT INTO Event (EventCreatorID, EventName, EventDescription, EventDate, EventTime, EventLocation, EventType)
+VALUES (1, 'Tech Summit 2026', 'Annual tech event', '2026-03-10', '10:00:00', 'Lahore Expo', 1);
+
+-- READ (View all events)
+SELECT * FROM Event;
+
+-- READ with JOIN to show creator and type
+SELECT E.EventName, EC.FirstName, EC.LastName, ET.EventTypeName
+FROM Event E
+JOIN EventCreator EC ON E.EventCreatorID = EC.EventCreatorID
+JOIN EventType ET ON E.EventType = ET.EventTypeID;
+
+-- UPDATE (Change event location)
+UPDATE Event
+SET EventLocation = 'Karachi Expo'
+WHERE EventID = 1;
+
+-- DELETE (Remove event)
+DELETE FROM Event
+WHERE EventID = 11;
+
+-- -----------------------------
+-- VENUE CRUD
+-- -----------------------------
+
+-- CREATE (Add new venue)
+INSERT INTO Venue (VenueName, VenueLocation, VenueCapacity)
+VALUES ('Karachi Banquet Hall', 'Karachi', 300);
+
+-- READ (View all venues)
+SELECT * FROM Venue;
+
+-- UPDATE (Change venue capacity)
+UPDATE Venue
+SET VenueCapacity = 500
+WHERE VenueID = 1;
+
+-- DELETE (Remove venue)
+DELETE FROM Venue
+WHERE VenueID = 11;
+
+-- -----------------------------
+-- EVENT-VENUE CRUD
+-- -----------------------------
+
+-- CREATE (Assign event to venue)
+INSERT INTO EventVenue (EventID, VenueID)
+VALUES (1, 1);
+
+-- READ (View event venue assignments)
+SELECT E.EventName, V.VenueName
+FROM EventVenue EV
+JOIN Event E ON EV.EventID = E.EventID
+JOIN Venue V ON EV.VenueID = V.VenueID;
+
+-- UPDATE (Change venue for an event)
+UPDATE EventVenue
+SET VenueID = 2
+WHERE EventVenueID = 1;
+
+-- DELETE (Remove event venue assignment)
+DELETE FROM EventVenue
+WHERE EventVenueID = 11;
+
+-- -----------------------------
+-- TICKET CRUD
+-- -----------------------------
+
+-- CREATE (Add ticket type for event)
+INSERT INTO Ticket (EventID, TicketType, TicketPrice, TicketQuantity)
+VALUES (1, 'VIP', 150.00, 50);
+
+-- READ (View all tickets)
+SELECT * FROM Ticket;
+
+-- UPDATE (Change ticket quantity)
+UPDATE Ticket
+SET TicketQuantity = TicketQuantity + 20
+WHERE TicketID = 1;
+
+-- DELETE (Remove ticket type)
+DELETE FROM Ticket
+WHERE TicketID = 11;
+
+-- -----------------------------
+-- ATTENDEE CRUD
+-- -----------------------------
+
+-- CREATE (Add attendee)
+INSERT INTO Attendee (FirstName, LastName, Email, Phone)
+VALUES ('Ayesha', 'Khan', 'ayesha@example.com', '03101234567');
+
+-- READ (View all attendees)
+SELECT * FROM Attendee;
+
+-- UPDATE (Update attendee phone)
+UPDATE Attendee
+SET Phone = '03009998888'
+WHERE AttendeeID = 1;
+
+-- DELETE (Remove attendee)
+DELETE FROM Attendee
+WHERE AttendeeID = 11;
+
+-- -----------------------------
+-- REGISTRATION CRUD
+-- -----------------------------
+
+-- CREATE (Register attendee for event)
+INSERT INTO Registration (EventID, AttendeeID, RegistrationDate, RegistrationStatus)
+VALUES (1, 1, CURDATE(), 'Confirmed');
+
+-- READ (View registrations)
+SELECT R.RegistrationID, A.FirstName, A.LastName, E.EventName, R.RegistrationStatus
+FROM Registration R
+JOIN Attendee A ON R.AttendeeID = A.AttendeeID
+JOIN Event E ON R.EventID = E.EventID;
+
+-- UPDATE (Change registration status)
+UPDATE Registration
+SET RegistrationStatus = 'Cancelled'
+WHERE RegistrationID = 1;
+
+-- DELETE (Remove registration)
+DELETE FROM Registration
+WHERE RegistrationID = 11;
+
+-- -----------------------------
+-- PAYMENT CRUD
+-- -----------------------------
+
+-- CREATE (Add payment for registration)
+INSERT INTO Payment (RegistrationID, PaymentDate, PaymentAmount, PaymentMethod)
+VALUES (1, CURDATE(), 150.00, 'Card');
+
+-- READ (View payments)
+SELECT P.PaymentID, A.FirstName, A.LastName, E.EventName, P.PaymentAmount, P.PaymentMethod
+FROM Payment P
+JOIN Registration R ON P.RegistrationID = R.RegistrationID
+JOIN Attendee A ON R.AttendeeID = A.AttendeeID
+JOIN Event E ON R.EventID = E.EventID;
+
+-- UPDATE (Change payment amount)
+UPDATE Payment
+SET PaymentAmount = 200.00
+WHERE PaymentID = 1;
+
+-- DELETE (Remove payment)
+DELETE FROM Payment
+WHERE PaymentID = 11;
+
+-- -----------------------------
+-- BUSINESS RULE QUERIES
+-- -----------------------------
+
+-- 1. Events with more than 50 attendees
+SELECT E.EventName, COUNT(R.RegistrationID) AS TotalAttendees
+FROM Event E
+JOIN Registration R ON E.EventID = R.EventID
+GROUP BY E.EventID
+HAVING TotalAttendees > 50;
+
+-- 2. Tickets with low stock (less than 10)
+SELECT EventName, TicketType, TicketQuantity
+FROM Ticket T
+JOIN Event E ON T.EventID = E.EventID
+WHERE TicketQuantity < 10;
+
+-- 3. Attendees registered for a specific event
+SELECT A.FirstName, A.LastName
+FROM Registration R
+JOIN Attendee A ON R.AttendeeID = A.AttendeeID
+WHERE R.EventID = 1;
+
+-- 4. Total payments received per event
+SELECT E.EventName, SUM(P.PaymentAmount) AS TotalPayments
+FROM Payment P
+JOIN Registration R ON P.RegistrationID = R.RegistrationID
+JOIN Event E ON R.EventID = E.EventID
+GROUP BY E.EventName;
+
+-- 5. Events organized by a specific creator
+SELECT E.EventName, ET.EventTypeName
+FROM Event E
+JOIN EventType ET ON E.EventType = ET.EventTypeID
+WHERE E.EventCreatorID = 1;
